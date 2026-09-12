@@ -12,13 +12,20 @@ pipeline {
 
     stages {
 
-        stage('Build & Test User Service') {
-            steps {
-                dir('user-service') {
-                    bat 'mvn clean test'
+        stage('Build User Service') {
+                    steps {
+                        dir('user-service') {
+                            bat 'mvn clean compile'
+                        }
+                    }
                 }
-            }
-        }
+        stage('Test User Service') {
+                    steps {
+                        dir('user-service') {
+                            bat 'mvn test'
+                        }
+                    }
+                }
     }
 
     post {
