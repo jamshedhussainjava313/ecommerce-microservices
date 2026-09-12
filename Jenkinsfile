@@ -6,6 +6,10 @@ pipeline {
             maven 'Maven-3.9.11'
         }
 
+    environment {
+            DB_PASSWORD = credentials('DB_PASSWORD')
+    }
+
     stages {
 
         stage('Build & Test User Service') {
