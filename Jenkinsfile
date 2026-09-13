@@ -34,6 +34,14 @@ pipeline {
                         }
                     }
                 }
+
+        stage('Generate Code Coverage') {
+                    steps {
+                        dir('user-service') {
+                            bat 'mvn jacoco:report'
+                        }
+                    }
+                }
     }
 
     post {
