@@ -42,6 +42,13 @@ pipeline {
                         }
                     }
                 }
+
+        stage('Archive Code Coverage') {
+                    steps {
+                        archiveArtifacts artifacts: 'user-service/target/site/jacoco/**',
+                                         fingerprint: true
+                    }
+                }
     }
 
     post {
