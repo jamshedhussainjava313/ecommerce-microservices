@@ -19,10 +19,18 @@ pipeline {
                         }
                     }
                 }
-        stage('Test User Service') {
+        stage('Unit Tests') {
                     steps {
                         dir('user-service') {
-                            bat 'mvn test'
+                            bat 'mvn test -Dtest.groups=unit'
+                        }
+                    }
+                }
+
+        stage('Integration Tests') {
+                    steps {
+                        dir('user-service') {
+                            bat 'mvn test -Dtest.groups=integration'
                         }
                     }
                 }

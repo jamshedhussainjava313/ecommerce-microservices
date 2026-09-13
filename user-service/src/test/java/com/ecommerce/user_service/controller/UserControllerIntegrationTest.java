@@ -3,6 +3,7 @@ package com.ecommerce.user_service.controller;
 import com.ecommerce.user_service.entity.User;
 import com.ecommerce.user_service.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Tag("integration")
 @SpringBootTest
 @AutoConfigureMockMvc
 public class UserControllerIntegrationTest {

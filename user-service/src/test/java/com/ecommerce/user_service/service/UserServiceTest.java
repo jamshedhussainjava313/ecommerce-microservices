@@ -3,6 +3,7 @@ package com.ecommerce.user_service.service;
 import com.ecommerce.user_service.entity.User;
 import com.ecommerce.user_service.exception.UserAlreadyExistsException;
 import com.ecommerce.user_service.repository.UserRepository;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@Tag("unit")
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
     @Mock
