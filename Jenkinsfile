@@ -8,6 +8,7 @@ pipeline {
 
     environment {
             DB_PASSWORD = credentials('DB_PASSWORD')
+            SONAR_TOKEN = credentials('SONAR_TOKEN')
     }
 
     stages {
@@ -42,6 +43,16 @@ pipeline {
                         }
                     }
                 }
+
+        stage('SonarQube Analysis') {
+            steps {
+                dir('user-service') {
+                    withSonarQubeEnv('SonarQube-Local') {
+                        bat 'mvn sonar:sonar -Dsonar.projectKey=ecommerce-user-service -Dsonar.token=%SONAR_TOKEN%'
+                    }
+                }
+            }
+        }
 
         stage('Archive Code Coverage') {
                     steps {
