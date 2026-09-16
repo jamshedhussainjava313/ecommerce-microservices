@@ -7,6 +7,9 @@
 # BlueJ files
 *.ctxt
 
+# Database backups
+infrastructure/docker/backup/
+
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
