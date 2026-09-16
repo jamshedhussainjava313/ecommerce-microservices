@@ -28,6 +28,12 @@ pipeline {
                     }
                 }
 
+        stage('Verify Docker Access') {
+            steps {
+                bat 'docker version'
+            }
+        }
+
         stage('Integration Tests') {
                     steps {
                         dir('user-service') {
