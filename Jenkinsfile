@@ -108,6 +108,11 @@ pipeline {
     }
 
     post {
+         always {
+                bat '''
+                    docker rm -f ecommerce-user-service-ci-postgres 2>NUL || exit /B 0
+                '''
+            }
 
         success {
             echo 'CI Pipeline completed successfully.'
