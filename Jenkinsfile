@@ -34,6 +34,37 @@ pipeline {
             }
         }
 
+        stage('Start CI PostgreSQL') {
+            steps {
+                bat '''
+                    docker rm -f ecommerce-user-service-ci-postgres 2>NUL || exit /B 0
+
+                    docker run -d ^
+                      --name ecommerce-user-service-ci-postgres ^
+                      -e POSTGRES_USER=ecommerce_user ^
+                      -e POSTGRES_PASSWORD=%DB_PASSWORD% ^
+                      -e POSTGRES_DB=user_db ^
+                      -p 5434:5432 ^
+                      postgres:16
+                '''
+
+                bat '''
+                    echo Waiting for CI PostgreSQL...
+
+                    :waitloop
+                    docker exec ecommerce-user-service-ci-postgres ^
+                      pg_isready -U ecommerce_user -d user_db
+
+                    if %ERRORLEVEL% NEQ 0 (
+                        timeout /t 2 /nobreak >NUL
+                        goto waitloop
+                    )
+
+                    echo CI PostgreSQL is ready.
+                '''
+            }
+        }
+
         stage('Integration Tests') {
                     steps {
                         dir('user-service') {
