@@ -1,5 +1,6 @@
 package com.ecommerce.user_service.service;
 
+import com.ecommerce.user_service.dto.UpdateUserRequest;
 import com.ecommerce.user_service.entity.User;
 import com.ecommerce.user_service.exception.UserAlreadyExistsException;
 import com.ecommerce.user_service.exception.UserNotFoundException;
@@ -118,6 +119,135 @@ public class UserServiceTest {
         assertEquals("User not found", exception.getMessage());
 
         verify(userRepository).findById(9999L);
+    }
+
+    @Test
+    void shouldUpdateUserSuccessfully() {
+
+        User existingUser = new User();
+        existingUser.setId(67L);
+        existingUser.setName("Old Name");
+        existingUser.setEmail("old@example.com");
+        existingUser.setPassword("old-hashed-password");
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setName("Updated Name");
+        request.setEmail("updated@example.com");
+        request.setPassword("newpassword123");
+
+        when(userRepository.findById(67L))
+                .thenReturn(Optional.of(existingUser));
+
+        when(userRepository.findByEmail("updated@example.com"))
+                .thenReturn(Optional.empty());
+
+        when(passwordEncoder.encode("newpassword123"))
+                .thenReturn("new-hashed-password");
+
+        when(userRepository.save(existingUser))
+                .thenReturn(existingUser);
+
+        User result = userService.updateUser(67L, request);
+
+        assertEquals("Updated Name", result.getName());
+        assertEquals("updated@example.com", result.getEmail());
+        assertEquals("new-hashed-password", result.getPassword());
+
+        verify(userRepository).findById(67L);
+        verify(userRepository).findByEmail("updated@example.com");
+        verify(passwordEncoder).encode("newpassword123");
+        verify(userRepository).save(existingUser);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingNonExistingUser() {
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setName("Updated Name");
+        request.setEmail("updated@example.com");
+        request.setPassword("newpassword123");
+
+        when(userRepository.findById(999999L))
+                .thenReturn(Optional.empty());
+
+        UserNotFoundException exception = assertThrows(
+                UserNotFoundException.class,
+                () -> userService.updateUser(999999L, request)
+        );
+
+        assertEquals("User not found", exception.getMessage());
+
+        verify(userRepository).findById(999999L);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenEmailBelongsToAnotherUser() {
+
+        User existingUser = new User();
+        existingUser.setId(67L);
+
+        User anotherUser = new User();
+        anotherUser.setId(68L);
+        anotherUser.setEmail("another@example.com");
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setName("Updated Name");
+        request.setEmail("another@example.com");
+        request.setPassword("newpassword123");
+
+        when(userRepository.findById(67L))
+                .thenReturn(Optional.of(existingUser));
+
+        when(userRepository.findByEmail("another@example.com"))
+                .thenReturn(Optional.of(anotherUser));
+
+        UserAlreadyExistsException exception = assertThrows(
+                UserAlreadyExistsException.class,
+                () -> userService.updateUser(67L, request)
+        );
+
+        assertEquals("Email already registered", exception.getMessage());
+
+        verify(userRepository).findById(67L);
+        verify(userRepository).findByEmail("another@example.com");
+        verify(userRepository, never()).save(any(User.class));
+        verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
+    void shouldAllowUserToKeepOwnEmail() {
+
+        User existingUser = new User();
+        existingUser.setId(67L);
+        existingUser.setName("Old Name");
+        existingUser.setEmail("same@example.com");
+        existingUser.setPassword("old-hashed-password");
+
+        UpdateUserRequest request = new UpdateUserRequest();
+        request.setName("Updated Name");
+        request.setEmail("same@example.com");
+        request.setPassword("newpassword123");
+
+        when(userRepository.findById(67L))
+                .thenReturn(Optional.of(existingUser));
+
+        when(userRepository.findByEmail("same@example.com"))
+                .thenReturn(Optional.of(existingUser));
+
+        when(passwordEncoder.encode("newpassword123"))
+                .thenReturn("new-hashed-password");
+
+        when(userRepository.save(existingUser))
+                .thenReturn(existingUser);
+
+        User result = userService.updateUser(67L, request);
+
+        assertEquals("Updated Name", result.getName());
+        assertEquals("same@example.com", result.getEmail());
+        assertEquals("new-hashed-password", result.getPassword());
+
+        verify(userRepository).save(existingUser);
     }
 
 }

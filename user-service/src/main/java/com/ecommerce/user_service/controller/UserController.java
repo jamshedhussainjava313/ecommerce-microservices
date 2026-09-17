@@ -1,6 +1,7 @@
 package com.ecommerce.user_service.controller;
 
 import com.ecommerce.user_service.dto.RegisterUserRequest;
+import com.ecommerce.user_service.dto.UpdateUserRequest;
 import com.ecommerce.user_service.dto.UserResponse;
 import com.ecommerce.user_service.entity.User;
 import com.ecommerce.user_service.service.UserService;
@@ -53,6 +54,19 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRequest request) {
 
+        User updatedUser = userService.updateUser(id, request);
+
+        UserResponse response = new UserResponse();
+        response.setId(updatedUser.getId());
+        response.setName(updatedUser.getName());
+        response.setEmail(updatedUser.getEmail());
+
+        return ResponseEntity.ok(response);
+    }
 
 }

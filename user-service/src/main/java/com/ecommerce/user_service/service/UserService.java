@@ -1,5 +1,6 @@
 package com.ecommerce.user_service.service;
 
+import com.ecommerce.user_service.dto.UpdateUserRequest;
 import com.ecommerce.user_service.entity.User;
 import com.ecommerce.user_service.exception.UserAlreadyExistsException;
 import com.ecommerce.user_service.exception.UserNotFoundException;
@@ -32,6 +33,27 @@ public class UserService {
     public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
+    }
+
+    public User updateUser(Long id, UpdateUserRequest request) {
+
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        userRepository.findByEmail(request.getEmail())
+                .ifPresent(user -> {
+                    if (!user.getId().equals(id)) {
+                        throw new UserAlreadyExistsException("Email already registered");
+                    }
+                });
+
+        existingUser.setName(request.getName());
+        existingUser.setEmail(request.getEmail());
+
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
+        existingUser.setPassword(hashedPassword);
+
+        return userRepository.save(existingUser);
     }
 
 }
