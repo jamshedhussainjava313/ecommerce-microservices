@@ -68,7 +68,7 @@ pipeline {
         stage('Integration Tests') {
                     steps {
                         dir('user-service') {
-                            bat 'mvn test -Dtest.groups=integration'
+                            bat 'mvn test -Dtest.groups=integration -Dspring.profiles.active=ci'
                         }
                     }
                 }
