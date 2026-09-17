@@ -7,8 +7,18 @@
 # BlueJ files
 *.ctxt
 
+# Database backups
+infrastructure/docker/backup/
+
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
+
+# Build output
+target/
+
+# IntelliJ IDEA
+.idea/
+*.iml
 
 # Package Files #
 *.jar
