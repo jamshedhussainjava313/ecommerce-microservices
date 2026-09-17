@@ -1,0 +1,31 @@
+services:
+
+  user-service:
+    image: ecommerce/user-service:1.3
+    container_name: ecommerce-user-service-compose
+    ports:
+      - "8081:8081"
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD}
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16
+    container_name: ecommerce-postgres-compose
+    environment:
+      POSTGRES_USER: ecommerce_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ecommerce_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ecommerce_user -d ecommerce_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+volumes:
+  postgres_data:
+
