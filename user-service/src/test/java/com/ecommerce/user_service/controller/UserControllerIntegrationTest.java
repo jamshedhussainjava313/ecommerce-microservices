@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -103,6 +104,32 @@ public class UserControllerIntegrationTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message")
                         .value("Email already registered"));
+    }
+
+    @Test
+    void shouldGetUserByIdSuccessfully() throws Exception {
+
+        User user = new User();
+        user.setName("Get User Test");
+        user.setEmail("getuser@example.com");
+        user.setPassword("hashed-password");
+
+        User savedUser = userRepository.save(user);
+
+        mockMvc.perform(get("/users/" + savedUser.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(savedUser.getId()))
+                .andExpect(jsonPath("$.name").value("Get User Test"))
+                .andExpect(jsonPath("$.email").value("getuser@example.com"))
+                .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
+    void shouldReturn404WhenUserNotFound() throws Exception {
+
+        mockMvc.perform(get("/users/999999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("User not found"));
     }
 
 }

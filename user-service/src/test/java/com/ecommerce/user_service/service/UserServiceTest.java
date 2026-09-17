@@ -2,6 +2,7 @@ package com.ecommerce.user_service.service;
 
 import com.ecommerce.user_service.entity.User;
 import com.ecommerce.user_service.exception.UserAlreadyExistsException;
+import com.ecommerce.user_service.exception.UserNotFoundException;
 import com.ecommerce.user_service.repository.UserRepository;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -81,4 +82,42 @@ public class UserServiceTest {
 
         verify(passwordEncoder, never()).encode(anyString());
     }
+
+    @Test
+    void shouldGetUserByIdSuccessfully() {
+
+        User user = new User();
+        user.setId(67L);
+        user.setName("Docker User");
+        user.setEmail("dockeruser@example.com");
+        user.setPassword("hashed-password");
+
+        when(userRepository.findById(67L))
+                .thenReturn(Optional.of(user));
+
+        User result = userService.getUserById(67L);
+
+        assertEquals(67L, result.getId());
+        assertEquals("Docker User", result.getName());
+        assertEquals("dockeruser@example.com", result.getEmail());
+
+        verify(userRepository).findById(67L);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFound() {
+
+        when(userRepository.findById(9999L))
+                .thenReturn(Optional.empty());
+
+        UserNotFoundException exception = assertThrows(
+                UserNotFoundException.class,
+                () -> userService.getUserById(9999L)
+        );
+
+        assertEquals("User not found", exception.getMessage());
+
+        verify(userRepository).findById(9999L);
+    }
+
 }

@@ -2,6 +2,7 @@ package com.ecommerce.user_service.service;
 
 import com.ecommerce.user_service.entity.User;
 import com.ecommerce.user_service.exception.UserAlreadyExistsException;
+import com.ecommerce.user_service.exception.UserNotFoundException;
 import com.ecommerce.user_service.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,11 @@ public class UserService {
         String hashPassword=passwordEncoder.encode(user.getPassword());
         user.setPassword(hashPassword);
         return userRepository.save(user);
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
     }
 
 }
