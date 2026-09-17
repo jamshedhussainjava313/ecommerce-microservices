@@ -29,6 +29,7 @@
 	<properties>
 		<java.version>17</java.version>
         <test.groups></test.groups>
+        <sonar.cpd.exclusions>**/dto/**</sonar.cpd.exclusions>
 	</properties>
 	<dependencies>
 		<dependency>
