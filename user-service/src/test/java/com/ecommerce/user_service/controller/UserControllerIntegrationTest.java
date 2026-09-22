@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -259,4 +260,37 @@ public class UserControllerIntegrationTest {
                 updatedUser.getPassword()
         ));
     }
+
+    @Test
+    void shouldGetAllUsers() throws Exception {
+        User user1 = new User();
+        user1.setName("User One");
+        user1.setEmail("user1@example.com");
+        user1.setPassword("hashed-password-1");
+
+        User user2 = new User();
+        user2.setName("User Two");
+        user2.setEmail("user2@example.com");
+        user2.setPassword("hashed-password-2");
+
+        userRepository.save(user1);
+        userRepository.save(user2);
+
+        mockMvc.perform(get("/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].name").value("User One"))
+                .andExpect(jsonPath("$[0].email").value("user1@example.com"))
+                .andExpect(jsonPath("$[0].password").doesNotExist())
+                .andExpect(jsonPath("$[1].name").value("User Two"))
+                .andExpect(jsonPath("$[1].email").value("user2@example.com"))
+                .andExpect(jsonPath("$[1].password").doesNotExist());
+    }
+    @Test
+    void shouldReturnEmptyListWhenNoUsersExist() throws Exception {
+        mockMvc.perform(get("/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
 }

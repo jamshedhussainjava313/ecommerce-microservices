@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -248,6 +249,29 @@ public class UserServiceTest {
         assertEquals("new-hashed-password", result.getPassword());
 
         verify(userRepository).save(existingUser);
+    }
+
+    @Test
+    void shouldReturnAllUsers() {
+        User user1 = new User();
+        user1.setId(1L);
+        user1.setName("User One");
+        user1.setEmail("user1@example.com");
+
+        User user2 = new User();
+        user2.setId(2L);
+        user2.setName("User Two");
+        user2.setEmail("user2@example.com");
+
+        when(userRepository.findAll()).thenReturn(List.of(user1, user2));
+
+        List<User> result = userService.getAllUsers();
+
+        assertEquals(2, result.size());
+        assertEquals("User One", result.get(0).getName());
+        assertEquals("User Two", result.get(1).getName());
+
+        verify(userRepository).findAll();
     }
 
 }

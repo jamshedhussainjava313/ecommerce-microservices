@@ -8,6 +8,8 @@ import com.ecommerce.user_service.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UserService {
 
@@ -54,6 +56,10 @@ public class UserService {
         existingUser.setPassword(hashedPassword);
 
         return userRepository.save(existingUser);
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
 }
