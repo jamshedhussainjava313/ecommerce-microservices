@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -69,4 +71,21 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+
+        List<User> users = userService.getAllUsers();
+
+        List<UserResponse> responses = users.stream()
+                .map(user -> {
+                    UserResponse response = new UserResponse();
+                    response.setId(user.getId());
+                    response.setName(user.getName());
+                    response.setEmail(user.getEmail());
+                    return response;
+                })
+                .toList();
+
+        return ResponseEntity.ok(responses);
+    }
 }
