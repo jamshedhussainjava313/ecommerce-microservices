@@ -13,17 +13,17 @@ pipeline {
 
     stages {
 
-        stage('Build User Service') {
+        stage('Build Product Service') {
                     steps {
-                        dir('user-service') {
+                        dir('product-service') {
                             bat 'mvn clean compile'
                         }
                     }
                 }
         stage('Unit Tests') {
                     steps {
-                        dir('user-service') {
-                            bat 'mvn test -Dtest.groups=unit'
+                        dir('product-service') {
+                            bat 'mvn test -Dtest=ProductServiceTest'
                         }
                     }
                 }
@@ -37,13 +37,13 @@ pipeline {
         stage('Start CI PostgreSQL') {
             steps {
                 bat '''
-                    docker rm -f ecommerce-user-service-ci-postgres 2>NUL || exit /B 0
+                    docker rm -f ecommerce-product-service-ci-postgres 2>NUL || exit /B 0
 
                     docker run -d ^
-                      --name ecommerce-user-service-ci-postgres ^
+                      --name ecommerce-product-service-ci-postgres ^
                       -e POSTGRES_USER=ecommerce_user ^
                       -e POSTGRES_PASSWORD=%DB_PASSWORD% ^
-                      -e POSTGRES_DB=user_db ^
+                      -e POSTGRES_DB=product_db ^
                       -p 5434:5432 ^
                       postgres:16
                 '''
@@ -52,8 +52,8 @@ pipeline {
                     echo Waiting for CI PostgreSQL...
 
                     :waitloop
-                    docker exec ecommerce-user-service-ci-postgres ^
-                      pg_isready -U ecommerce_user -d user_db
+                    docker exec ecommerce-product-service-ci-postgres ^
+                      pg_isready -U ecommerce_user -d product_db
 
                     if %ERRORLEVEL% NEQ 0 (
                         timeout /t 2 /nobreak >NUL
@@ -67,15 +67,15 @@ pipeline {
 
         stage('Integration Tests') {
                     steps {
-                        dir('user-service') {
-                            bat 'mvn test -Dtest.groups=integration -Dspring.profiles.active=ci'
+                        dir('product-service') {
+                            bat 'mvn test -Dtest=ProductControllerIntegrationTest -Dspring.profiles.active=ci'
                         }
                     }
                 }
 
         stage('Generate Code Coverage') {
                     steps {
-                        dir('user-service') {
+                        dir('product-service') {
                             bat 'mvn jacoco:report'
                         }
                     }
@@ -83,9 +83,9 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                dir('user-service') {
+                dir('product-service') {
                     withSonarQubeEnv('SonarQube-Local') {
-                        bat 'mvn sonar:sonar -Dsonar.projectKey=ecommerce-user-service -Dsonar.token=%SONAR_TOKEN%'
+                        bat 'mvn sonar:sonar -Dsonar.projectKey=ecommerce-product-service -Dsonar.token=%SONAR_TOKEN%'
                     }
                 }
             }
@@ -101,7 +101,7 @@ pipeline {
 
         stage('Archive Code Coverage') {
                     steps {
-                        archiveArtifacts artifacts: 'user-service/target/site/jacoco/**',
+                        archiveArtifacts artifacts: 'product-service/target/site/jacoco/**',
                                          fingerprint: true
                     }
                 }
@@ -110,7 +110,7 @@ pipeline {
     post {
          always {
                 bat '''
-                    docker rm -f ecommerce-user-service-ci-postgres 2>NUL || exit /B 0
+                    docker rm -f ecommerce-product-service-ci-postgres 2>NUL || exit /B 0
                 '''
             }
 
