@@ -113,4 +113,44 @@ public class ProductServiceTest {
         verify(productRepository, never()).save(any(Product.class));
     }
 
+    @Test
+    void shouldGetProduct() {
+        Long productId = 1L;
+
+        Product product = new Product();
+        product.setId(productId);
+        product.setName("Laptop");
+        product.setDescription("Business laptop");
+        product.setPrice(new BigDecimal("75000"));
+        product.setStock(10);
+
+        when(productRepository.findById(productId))
+                .thenReturn(Optional.of(product));
+
+        Product result = productService.getProduct(productId);
+
+        assertEquals(productId, result.getId());
+        assertEquals("Laptop", result.getName());
+        assertEquals("Business laptop", result.getDescription());
+        assertEquals(new BigDecimal("75000"), result.getPrice());
+        assertEquals(10, result.getStock());
+
+        verify(productRepository).findById(productId);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenProductDoesNotExistForGet() {
+        Long productId = 999L;
+
+        when(productRepository.findById(productId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                ProductNotFoundException.class,
+                () -> productService.getProduct(productId)
+        );
+
+        verify(productRepository).findById(productId);
+    }
+
 }

@@ -17,8 +17,7 @@ import java.math.BigDecimal;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -209,5 +208,33 @@ public class ProductControllerIntegrationTest {
                 }
                 """
         );
+    }
+
+    @Test
+    void shouldGetProduct() throws Exception {
+        Product product = new Product();
+        product.setName("Laptop");
+        product.setDescription("Business laptop");
+        product.setPrice(new BigDecimal("75000"));
+        product.setStock(10);
+
+        Product savedProduct = productRepository.save(product);
+
+        mockMvc.perform(get("/products/" + savedProduct.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(savedProduct.getId()))
+                .andExpect(jsonPath("$.name").value("Laptop"))
+                .andExpect(jsonPath("$.description").value("Business laptop"))
+                .andExpect(jsonPath("$.price").value(75000.0))
+                .andExpect(jsonPath("$.stock").value(10));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenProductDoesNotExistForGet() throws Exception {
+        mockMvc.perform(get("/products/999999"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(
+                        containsString("Product not found with id: 999999")
+                ));
     }
 }
