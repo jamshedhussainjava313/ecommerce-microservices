@@ -1,9 +1,5 @@
 package com.ecommerce.product_service.exception;
 
-
-
-import java.math.BigDecimal;
-
 public class ProductNotFoundException extends RuntimeException{
 
     public ProductNotFoundException(Long id) {
