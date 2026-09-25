@@ -200,4 +200,40 @@ public class ProductServiceTest {
         verify(productRepository).findAll();
     }
 
+    @Test
+    void shouldDeleteProduct() {
+        Long productId = 1L;
+
+        Product product = new Product();
+        product.setId(productId);
+        product.setName("Laptop");
+        product.setDescription("Business laptop");
+        product.setPrice(new BigDecimal("75000"));
+        product.setStock(10);
+
+        when(productRepository.findById(productId))
+                .thenReturn(Optional.of(product));
+
+        productService.deleteProduct(productId);
+
+        verify(productRepository).findById(productId);
+        verify(productRepository).delete(product);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenProductDoesNotExistForDelete() {
+        Long productId = 999L;
+
+        when(productRepository.findById(productId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                ProductNotFoundException.class,
+                () -> productService.deleteProduct(productId)
+        );
+
+        verify(productRepository).findById(productId);
+        verify(productRepository, never()).delete(any(Product.class));
+    }
+
 }
