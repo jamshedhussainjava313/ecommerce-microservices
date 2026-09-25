@@ -1,7 +1,9 @@
 package com.ecommerce.product_service.service;
 
 import com.ecommerce.product_service.dto.CreateProductRequest;
+import com.ecommerce.product_service.dto.UpdateProductRequest;
 import com.ecommerce.product_service.entity.Product;
+import com.ecommerce.product_service.exception.ProductNotFoundException;
 import com.ecommerce.product_service.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,19 @@ public class ProductService {
     public Product createProduct(CreateProductRequest request) {
 
         Product product = new Product();
+
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setStock(request.getStock());
+
+        return productRepository.save(product);
+    }
+
+    public Product updateProduct(Long id, UpdateProductRequest request) {
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
 
         product.setName(request.getName());
         product.setDescription(request.getDescription());
