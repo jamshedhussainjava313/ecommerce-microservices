@@ -50,4 +50,11 @@ public class ProductService {
         return productRepository.findAll();
     }
 
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+
+        productRepository.delete(product);
+    }
+
 }

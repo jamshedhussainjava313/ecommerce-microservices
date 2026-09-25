@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -275,5 +276,32 @@ public class ProductControllerIntegrationTest {
         mockMvc.perform(get("/products"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void shouldDeleteProduct() throws Exception {
+
+        Product product = new Product();
+        product.setName("Laptop");
+        product.setDescription("Business laptop");
+        product.setPrice(new BigDecimal("75000"));
+        product.setStock(10);
+
+        Product savedProduct = productRepository.save(product);
+
+        mockMvc.perform(delete("/products/" + savedProduct.getId()))
+                .andExpect(status().isNoContent());
+
+        assertTrue(productRepository.findById(savedProduct.getId()).isEmpty());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenProductDoesNotExistForDelete() throws Exception {
+
+        mockMvc.perform(delete("/products/999999"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(
+                        containsString("Product not found with id: 999999")
+                ));
     }
 }
