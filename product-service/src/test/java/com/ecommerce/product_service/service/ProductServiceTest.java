@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -151,6 +152,52 @@ public class ProductServiceTest {
         );
 
         verify(productRepository).findById(productId);
+    }
+
+    @Test
+    void shouldGetAllProducts() {
+
+        Product product1 = new Product();
+        product1.setId(1L);
+        product1.setName("Laptop");
+        product1.setDescription("Business laptop");
+        product1.setPrice(new BigDecimal("75000"));
+        product1.setStock(10);
+
+        Product product2 = new Product();
+        product2.setId(2L);
+        product2.setName("Keyboard");
+        product2.setDescription("Mechanical keyboard");
+        product2.setPrice(new BigDecimal("2500"));
+        product2.setStock(20);
+
+        when(productRepository.findAll())
+                .thenReturn(List.of(product1, product2));
+
+        List<Product> result = productService.getAllProducts();
+
+        assertEquals(2, result.size());
+
+        assertEquals(1L, result.get(0).getId());
+        assertEquals("Laptop", result.get(0).getName());
+
+        assertEquals(2L, result.get(1).getId());
+        assertEquals("Keyboard", result.get(1).getName());
+
+        verify(productRepository).findAll();
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoProductsExist() {
+
+        when(productRepository.findAll())
+                .thenReturn(List.of());
+
+        List<Product> result = productService.getAllProducts();
+
+        assertTrue(result.isEmpty());
+
+        verify(productRepository).findAll();
     }
 
 }
