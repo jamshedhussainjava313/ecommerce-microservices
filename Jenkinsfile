@@ -44,7 +44,7 @@ pipeline {
                       -e POSTGRES_USER=ecommerce_user ^
                       -e POSTGRES_PASSWORD=%DB_PASSWORD% ^
                       -e POSTGRES_DB=order_db ^
-                      -p 5435:5432 ^
+                      -p 5434:5432 ^
                       postgres:16
                 '''
 
