@@ -17,8 +17,8 @@ import java.math.BigDecimal;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -209,5 +209,99 @@ public class ProductControllerIntegrationTest {
                 }
                 """
         );
+    }
+
+    @Test
+    void shouldGetProduct() throws Exception {
+        Product product = new Product();
+        product.setName("Laptop");
+        product.setDescription("Business laptop");
+        product.setPrice(new BigDecimal("75000"));
+        product.setStock(10);
+
+        Product savedProduct = productRepository.save(product);
+
+        mockMvc.perform(get("/products/" + savedProduct.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(savedProduct.getId()))
+                .andExpect(jsonPath("$.name").value("Laptop"))
+                .andExpect(jsonPath("$.description").value("Business laptop"))
+                .andExpect(jsonPath("$.price").value(75000.0))
+                .andExpect(jsonPath("$.stock").value(10));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenProductDoesNotExistForGet() throws Exception {
+        mockMvc.perform(get("/products/999999"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(
+                        containsString("Product not found with id: 999999")
+                ));
+    }
+
+    @Test
+    void shouldGetAllProducts() throws Exception {
+
+        Product product1 = new Product();
+        product1.setName("Laptop");
+        product1.setDescription("Business laptop");
+        product1.setPrice(new BigDecimal("75000"));
+        product1.setStock(10);
+
+        Product product2 = new Product();
+        product2.setName("Keyboard");
+        product2.setDescription("Mechanical keyboard");
+        product2.setPrice(new BigDecimal("2500"));
+        product2.setStock(20);
+
+        productRepository.save(product1);
+        productRepository.save(product2);
+
+        mockMvc.perform(get("/products"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].name").value("Laptop"))
+                .andExpect(jsonPath("$[0].description").value("Business laptop"))
+                .andExpect(jsonPath("$[0].price").value(75000.0))
+                .andExpect(jsonPath("$[0].stock").value(10))
+                .andExpect(jsonPath("$[1].name").value("Keyboard"))
+                .andExpect(jsonPath("$[1].description").value("Mechanical keyboard"))
+                .andExpect(jsonPath("$[1].price").value(2500.0))
+                .andExpect(jsonPath("$[1].stock").value(20));
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoProductsExist() throws Exception {
+
+        mockMvc.perform(get("/products"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void shouldDeleteProduct() throws Exception {
+
+        Product product = new Product();
+        product.setName("Laptop");
+        product.setDescription("Business laptop");
+        product.setPrice(new BigDecimal("75000"));
+        product.setStock(10);
+
+        Product savedProduct = productRepository.save(product);
+
+        mockMvc.perform(delete("/products/" + savedProduct.getId()))
+                .andExpect(status().isNoContent());
+
+        assertTrue(productRepository.findById(savedProduct.getId()).isEmpty());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenProductDoesNotExistForDelete() throws Exception {
+
+        mockMvc.perform(delete("/products/999999"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(
+                        containsString("Product not found with id: 999999")
+                ));
     }
 }
