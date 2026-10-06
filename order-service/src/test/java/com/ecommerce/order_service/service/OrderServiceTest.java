@@ -1,5 +1,7 @@
 package com.ecommerce.order_service.service;
 
+import com.ecommerce.order_service.client.UserClient;
+import com.ecommerce.order_service.client.UserResponse;
 import com.ecommerce.order_service.dto.CreateOrderRequest;
 import com.ecommerce.order_service.dto.OrderItemRequest;
 import com.ecommerce.order_service.dto.OrderResponse;
@@ -27,6 +29,9 @@ public class OrderServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
+    @Mock
+    private UserClient userClient;
+
     @InjectMocks
     private OrderService orderService;
 
@@ -41,6 +46,9 @@ public class OrderServiceTest {
         itemRequest.setQuantity(2);
 
         request.setItems(List.of(itemRequest));
+
+        when(userClient.getUserById(request.getUserId()))
+                .thenReturn(new UserResponse());
 
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> {
