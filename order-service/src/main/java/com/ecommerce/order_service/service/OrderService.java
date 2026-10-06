@@ -1,5 +1,7 @@
 package com.ecommerce.order_service.service;
 
+import com.ecommerce.order_service.client.UserClient;
+import com.ecommerce.order_service.client.UserNotFoundException;
 import com.ecommerce.order_service.dto.CreateOrderRequest;
 import com.ecommerce.order_service.dto.OrderItemRequest;
 import com.ecommerce.order_service.dto.OrderItemResponse;
@@ -8,6 +10,7 @@ import com.ecommerce.order_service.entity.Order;
 import com.ecommerce.order_service.entity.OrderItem;
 import com.ecommerce.order_service.exception.OrderNotFoundException;
 import com.ecommerce.order_service.repository.OrderRepository;
+import feign.FeignException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,13 +22,20 @@ import java.util.List;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final UserClient userClient;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository, UserClient userClient) {
         this.orderRepository = orderRepository;
+        this.userClient = userClient;
     }
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
+        try {
+            userClient.getUserById(request.getUserId());
+        } catch (FeignException.NotFound ex) {
+            throw new UserNotFoundException(request.getUserId());
+        }
 
         Order order = new Order();
         order.setUserId(request.getUserId());
@@ -42,11 +52,10 @@ public class OrderService {
             item.setQuantity(itemRequest.getQuantity());
 
             /*
-             * Product price will come from Product Service
-             * when ECM-31 is implemented.
+             * Product price will be retrieved from Product Service
+             * when the product validation/communication story is implemented.
              *
-             * For now this is only a placeholder so that
-             * the Order Service foundation can be built.
+             * For now, price is a placeholder.
              */
             item.setPrice(BigDecimal.ZERO);
 
