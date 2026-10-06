@@ -6,6 +6,7 @@ import com.ecommerce.order_service.dto.OrderItemResponse;
 import com.ecommerce.order_service.dto.OrderResponse;
 import com.ecommerce.order_service.entity.Order;
 import com.ecommerce.order_service.entity.OrderItem;
+import com.ecommerce.order_service.exception.OrderNotFoundException;
 import com.ecommerce.order_service.repository.OrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +58,16 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         return mapToResponse(savedOrder);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderById(Long id) {
+
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() ->
+                        new OrderNotFoundException(id));
+
+        return mapToResponse(order);
     }
 
     private OrderResponse mapToResponse(Order order) {
