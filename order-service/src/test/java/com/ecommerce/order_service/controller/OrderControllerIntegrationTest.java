@@ -1,5 +1,8 @@
 package com.ecommerce.order_service.controller;
 
+import com.ecommerce.order_service.client.UserClient;
+import com.ecommerce.order_service.client.UserNotFoundException;
+import com.ecommerce.order_service.client.UserResponse;
 import com.ecommerce.order_service.entity.Order;
 import com.ecommerce.order_service.repository.OrderRepository;
 import org.junit.jupiter.api.Test;
@@ -8,11 +11,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,6 +34,9 @@ public class OrderControllerIntegrationTest {
     @Autowired
     private OrderRepository orderRepository;
 
+    @MockitoBean
+    private UserClient userClient;
+
     @Test
     void shouldCreateOrderSuccessfully() throws Exception {
 
@@ -43,6 +51,14 @@ public class OrderControllerIntegrationTest {
                     ]
                 }
                 """;
+
+        UserResponse userResponse = new UserResponse();
+        userResponse.setId(1L);
+        userResponse.setName("Test User");
+        userResponse.setEmail("test@example.com");
+
+        when(userClient.getUserById(1L))
+                .thenReturn(userResponse);
 
         mockMvc.perform(post("/orders")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -154,6 +170,38 @@ public class OrderControllerIntegrationTest {
         mockMvc.perform(get("/orders/user/999"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void shouldRejectOrderWhenUserDoesNotExist() throws Exception {
+
+        Long userId = 999999L;
+
+        /*doThrow(new UserNotFoundException(userId))
+                .when(userClient)
+                .getUserById(userId);*/
+
+        when(userClient.getUserById(userId))
+                .thenThrow(new UserNotFoundException(userId));
+
+        String request = """
+            {
+                "userId": 999999,
+                "items": [
+                    {
+                        "productId": 1,
+                        "quantity": 2
+                    }
+                ]
+            }
+            """;
+
+        mockMvc.perform(post("/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error")
+                        .value("User not found with id: 999999"));
     }
 
 }
