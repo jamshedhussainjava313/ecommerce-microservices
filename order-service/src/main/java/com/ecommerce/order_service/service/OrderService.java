@@ -97,4 +97,13 @@ public class OrderService {
 
         return response;
     }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getOrderHistory(Long userId) {
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
 }
