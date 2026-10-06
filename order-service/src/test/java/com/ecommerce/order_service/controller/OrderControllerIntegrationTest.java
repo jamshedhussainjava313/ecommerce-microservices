@@ -125,4 +125,35 @@ public class OrderControllerIntegrationTest {
                 .andExpect(jsonPath("$.status").value("CREATED"));
     }
 
+    @Test
+    void getOrderHistory_shouldReturnOrdersForUser() throws Exception {
+        Order order1 = new Order();
+        order1.setUserId(1L);
+        order1.setTotalAmount(BigDecimal.ZERO);
+        order1.setStatus("CREATED");
+        order1.setCreatedAt(LocalDateTime.now().minusDays(1));
+
+        Order order2 = new Order();
+        order2.setUserId(1L);
+        order2.setTotalAmount(BigDecimal.ZERO);
+        order2.setStatus("CREATED");
+        order2.setCreatedAt(LocalDateTime.now());
+
+        order1 = orderRepository.save(order1);
+        order2 = orderRepository.save(order2);
+
+        mockMvc.perform(get("/orders/user/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(order2.getId()))
+                .andExpect(jsonPath("$[1].id").value(order1.getId()));
+    }
+
+    @Test
+    void getOrderHistory_shouldReturnEmptyListWhenUserHasNoOrders() throws Exception {
+        mockMvc.perform(get("/orders/user/999"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
 }

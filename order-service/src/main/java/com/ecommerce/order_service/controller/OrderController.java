@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
@@ -37,4 +39,14 @@ public class OrderController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<OrderResponse>> getOrderHistory(
+            @PathVariable Long userId) {
+
+        List<OrderResponse> response = orderService.getOrderHistory(userId);
+
+        return ResponseEntity.ok(response);
+    }
+
 }

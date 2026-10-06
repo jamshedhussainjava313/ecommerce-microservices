@@ -105,4 +105,49 @@ public class OrderServiceTest {
 
         verify(orderRepository).findById(orderId);
     }
+
+    @Test
+    void getOrderHistory_shouldReturnOrdersForUser() {
+        Long userId = 1L;
+
+        Order order1 = new Order();
+        order1.setId(2L);
+        order1.setUserId(userId);
+        order1.setTotalAmount(BigDecimal.ZERO);
+        order1.setStatus("CREATED");
+        order1.setCreatedAt(LocalDateTime.now());
+
+        Order order2 = new Order();
+        order2.setId(1L);
+        order2.setUserId(userId);
+        order2.setTotalAmount(BigDecimal.ZERO);
+        order2.setStatus("CREATED");
+        order2.setCreatedAt(LocalDateTime.now().minusDays(1));
+
+        when(orderRepository.findByUserIdOrderByCreatedAtDesc(userId))
+                .thenReturn(List.of(order1, order2));
+
+        List<OrderResponse> result = orderService.getOrderHistory(userId);
+
+        assertEquals(2, result.size());
+        assertEquals(2L, result.get(0).getId());
+        assertEquals(1L, result.get(1).getId());
+
+        verify(orderRepository).findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    @Test
+    void getOrderHistory_shouldReturnEmptyListWhenUserHasNoOrders() {
+        Long userId = 999L;
+
+        when(orderRepository.findByUserIdOrderByCreatedAtDesc(userId))
+                .thenReturn(List.of());
+
+        List<OrderResponse> result = orderService.getOrderHistory(userId);
+
+        assertTrue(result.isEmpty());
+
+        verify(orderRepository).findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
 }
