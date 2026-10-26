@@ -1,10 +1,9 @@
 package com.ecommerce.order_service.controller;
 
-import com.ecommerce.order_service.client.UserClient;
-import com.ecommerce.order_service.client.UserNotFoundException;
-import com.ecommerce.order_service.client.UserResponse;
+import com.ecommerce.order_service.client.*;
 import com.ecommerce.order_service.entity.Order;
 import com.ecommerce.order_service.repository.OrderRepository;
+import feign.FeignException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,6 +36,9 @@ public class OrderControllerIntegrationTest {
     @MockitoBean
     private UserClient userClient;
 
+    @MockitoBean
+    private ProductClient productClient;
+
     @Test
     void shouldCreateOrderSuccessfully() throws Exception {
 
@@ -59,6 +61,16 @@ public class OrderControllerIntegrationTest {
 
         when(userClient.getUserById(1L))
                 .thenReturn(userResponse);
+
+        ProductResponse product = new ProductResponse();
+        product.setId(1L);
+        product.setName("Test Product");
+        product.setDescription("Integration test product");
+        product.setPrice(new BigDecimal("25.00"));
+        product.setStock(10);
+
+        when(productClient.getProductById(1L))
+                .thenReturn(product);
 
         mockMvc.perform(post("/orders")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -203,5 +215,115 @@ public class OrderControllerIntegrationTest {
                 .andExpect(jsonPath("$.error")
                         .value("User not found with id: 999999"));
     }
+
+
+    @Test
+    void shouldRejectOrderWhenProductDoesNotExist() throws Exception {
+        when(userClient.getUserById(1L)).thenReturn(new UserResponse());
+
+
+        feign.Request feignRequest = feign.Request.create(
+                feign.Request.HttpMethod.GET,
+                "http://localhost:8082/products/999",
+                java.util.Map.of(),
+                null,
+                java.nio.charset.StandardCharsets.UTF_8,
+                null
+        );
+
+        feign.Response feignResponse = feign.Response.builder()
+                .status(404)
+                .reason("Not Found")
+                .request(feignRequest)
+                .headers(java.util.Map.of())
+                .body("Product not found", java.nio.charset.StandardCharsets.UTF_8)
+                .build();
+
+        FeignException notFoundException = FeignException.errorStatus(
+                "ProductClient#getProductById(Long)",
+                feignResponse
+        );
+
+        when(productClient.getProductById(999L))
+                .thenThrow(notFoundException);
+
+
+        String request = """
+            {
+                "userId": 1,
+                "items": [
+                    {
+                        "productId": 999,
+                        "quantity": 1
+                    }
+                ]
+            }
+            """;
+
+        mockMvc.perform(post("/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error")
+                        .value("Product not found with id: 999"));
+    }
+
+    @Test
+    void shouldRejectOrderWhenProductStockIsInsufficient() throws Exception {
+        when(userClient.getUserById(1L)).thenReturn(new UserResponse());
+
+        ProductResponse product = new ProductResponse();
+        product.setId(1L);
+        product.setStock(2);
+
+        when(productClient.getProductById(1L)).thenReturn(product);
+
+        String request = """
+            {
+                "userId": 1,
+                "items": [
+                    {
+                        "productId": 1,
+                        "quantity": 5
+                    }
+                ]
+            }
+            """;
+
+        mockMvc.perform(post("/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error")
+                        .value("Insufficient stock for product 1. Requested: 5, available: 2"));
+    }
+
+    @Test
+    void shouldReturn503WhenProductServiceFails() throws Exception {
+        when(userClient.getUserById(1L)).thenReturn(new UserResponse());
+
+        FeignException serviceError =
+                org.mockito.Mockito.mock(FeignException.class);
+
+        when(productClient.getProductById(1L)).thenThrow(serviceError);
+
+        String request = """
+            {
+                "userId": 1,
+                "items": [
+                    {
+                        "productId": 1,
+                        "quantity": 1
+                    }
+                ]
+            }
+            """;
+
+        mockMvc.perform(post("/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isServiceUnavailable());
+    }
+
 
 }
