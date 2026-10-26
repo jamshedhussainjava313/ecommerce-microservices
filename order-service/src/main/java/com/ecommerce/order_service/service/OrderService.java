@@ -1,7 +1,7 @@
 package com.ecommerce.order_service.service;
 
-import com.ecommerce.order_service.client.UserClient;
-import com.ecommerce.order_service.client.UserNotFoundException;
+import com.ecommerce.order_service.InsufficientStockException;
+import com.ecommerce.order_service.client.*;
 import com.ecommerce.order_service.dto.CreateOrderRequest;
 import com.ecommerce.order_service.dto.OrderItemRequest;
 import com.ecommerce.order_service.dto.OrderItemResponse;
@@ -23,20 +23,56 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final UserClient userClient;
+    private final ProductClient productClient;
 
-    public OrderService(OrderRepository orderRepository, UserClient userClient) {
+    public OrderService(
+            OrderRepository orderRepository,
+            UserClient userClient,
+            ProductClient productClient) {
         this.orderRepository = orderRepository;
         this.userClient = userClient;
+        this.productClient = productClient;
     }
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
+
+        // Step 1: Validate the user.
         try {
             userClient.getUserById(request.getUserId());
         } catch (FeignException.NotFound ex) {
             throw new UserNotFoundException(request.getUserId());
         }
 
+        // Step 2: Validate every product before saving the order.
+        for (OrderItemRequest itemRequest : request.getItems()) {
+
+            ProductResponse product;
+
+            try {
+                product = productClient.getProductById(
+                        itemRequest.getProductId());
+            } catch (FeignException.NotFound ex) {
+                throw new ProductNotFoundException(
+                        itemRequest.getProductId());
+            } catch (FeignException ex) {
+                throw new ProductServiceUnavailableException(
+                        "Unable to validate product "
+                                + itemRequest.getProductId()
+                                + " because Product Service returned an error.",
+                        ex);
+            }
+
+            if (product.getStock() == null
+                    || product.getStock() < itemRequest.getQuantity()) {
+                throw new InsufficientStockException(
+                        itemRequest.getProductId(),
+                        itemRequest.getQuantity(),
+                        product.getStock());
+            }
+        }
+
+        // Step 3: Create and save the order only after validation succeeds.
         Order order = new Order();
         order.setUserId(request.getUserId());
         order.setStatus("CREATED");
@@ -51,12 +87,7 @@ public class OrderService {
             item.setProductId(itemRequest.getProductId());
             item.setQuantity(itemRequest.getQuantity());
 
-            /*
-             * Product price will be retrieved from Product Service
-             * when the product validation/communication story is implemented.
-             *
-             * For now, price is a placeholder.
-             */
+            // Price calculation is outside this validation step.
             item.setPrice(BigDecimal.ZERO);
 
             order.getOrderItems().add(item);
@@ -92,7 +123,8 @@ public class OrderService {
         List<OrderItemResponse> items = order.getOrderItems()
                 .stream()
                 .map(item -> {
-                    OrderItemResponse itemResponse = new OrderItemResponse();
+                    OrderItemResponse itemResponse =
+                            new OrderItemResponse();
 
                     itemResponse.setProductId(item.getProductId());
                     itemResponse.setQuantity(item.getQuantity());
@@ -109,7 +141,8 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrderHistory(Long userId) {
-        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId)
+        return orderRepository
+                .findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
